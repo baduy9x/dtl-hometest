@@ -50,7 +50,7 @@ def download(link, tmp_file_name, success_file_name, is_zip_file):
             logging.error("Removing tmp file...")
             os.remove(tmp_file_name)
             logging.error("Exiting...")
-            sys.exit(0)
+            sys.exit(1)
     else:
         os.rename(tmp_file_name, success_file_name)
         logging.info("File is successfully downloaded in {} at the date folder".format(success_file_name))
