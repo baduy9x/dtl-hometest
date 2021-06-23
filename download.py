@@ -29,15 +29,22 @@ def check_valid_zip_file(file_path):
         return False
 
 def download(link, tmp_file_name, success_file_name, is_zip_file):
-    response = requests.get(link)
-    with open(tmp_file_name, "wb") as download_file:
-        for data in response.iter_content():
-            download_file.write(data)
+    try:
+        response = requests.get(link)
+        if response.headers['Content-Type'] != 'application/download':
+            logging.warning("File for this date is not available at the server, try again later...")
+            sys.exit(0)
+        with open(tmp_file_name, "wb") as download_file:
+            for data in response.iter_content():
+                download_file.write(data)
+    except:
+        logging.error("Download file failed, check your internet connection...")
+        sys.exit(1)
     if is_zip_file:
         is_valid = check_valid_zip_file(tmp_file_name)
         if is_valid:
             os.rename(tmp_file_name, success_file_name)
-            logging.info("File is successfully downloaded in {}".format(success_file_name))
+            logging.info("File is successfully downloaded in {} at the date folder".format(success_file_name))
         else:
             logging.error("The zip file downloaded is corrupted, download failed...")
             logging.error("Removing tmp file...")
@@ -46,7 +53,7 @@ def download(link, tmp_file_name, success_file_name, is_zip_file):
             sys.exit(0)
     else:
         os.rename(tmp_file_name, success_file_name)
-        logging.info("File is successfully downloaded in {}".format(success_file_name))
+        logging.info("File is successfully downloaded in {} at the date folder".format(success_file_name))
 
 def cal_num_weekend_day_in_range(start_date, end_date):
     delta = (end_date - start_date).days
@@ -83,8 +90,6 @@ def get_download_info(date, file_type):
     elif file_type == 'TCDS':
         link = os.path.join(base_link, str(number), "TC_structure.dat")
         return (link, "TC_structure.tmp", "TC_structure.dat", False)
-
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
