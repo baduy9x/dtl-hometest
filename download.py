@@ -1,9 +1,12 @@
-import sys, argparse, os
+import sys
+import argparse
+import os
 import zipfile
 import requests
 from datetime import datetime, timedelta
 import logging
 logging.basicConfig(level=logging.INFO)
+
 
 def check_valid_date(date_str):
     try:
@@ -11,12 +14,13 @@ def check_valid_date(date_str):
     except:
         logging.error("The date input is not in corrected format, exiting...")
         sys.exit(0)
-    if date_obj > datetime.now() - timedelta(days = 1):
+    if date_obj > datetime.now() - timedelta(days=1):
         logging.warning("Data is not available for this date, exiting...")
         sys.exit(0)
     if date_obj.weekday() == 6 or date_obj.weekday() == 5:
         logging.warning("This is weekend, no data for this date, exiting...")
         sys.exit(0)
+
 
 def check_valid_zip_file(file_path):
     zip_file = zipfile.ZipFile(file_path)
@@ -28,32 +32,39 @@ def check_valid_zip_file(file_path):
         logging.error("File is not downloaded correctly")
         return False
 
+
 def download(link, tmp_file_name, success_file_name, is_zip_file):
     try:
         response = requests.get(link)
         if response.headers['Content-Type'] != 'application/download':
-            logging.warning("File for this date is not available at the server, try again later...")
+            logging.warning(
+                "File for this date is not available at the server, try again later...")
             sys.exit(0)
         with open(tmp_file_name, "wb") as download_file:
             for data in response.iter_content():
                 download_file.write(data)
     except:
-        logging.error("Download file failed, check your internet connection...")
+        logging.error(
+            "Download file failed, check your internet connection...")
         sys.exit(1)
     if is_zip_file:
         is_valid = check_valid_zip_file(tmp_file_name)
         if is_valid:
             os.rename(tmp_file_name, success_file_name)
-            logging.info("File is successfully downloaded in {} at the date folder".format(success_file_name))
+            logging.info("File is successfully downloaded in {} at the date folder".format(
+                success_file_name))
         else:
-            logging.error("The zip file downloaded is corrupted, download failed...")
+            logging.error(
+                "The zip file downloaded is corrupted, download failed...")
             logging.error("Removing tmp file...")
             os.remove(tmp_file_name)
             logging.error("Exiting...")
             sys.exit(1)
     else:
         os.rename(tmp_file_name, success_file_name)
-        logging.info("File is successfully downloaded in {} at the date folder".format(success_file_name))
+        logging.info("File is successfully downloaded in {} at the date folder".format(
+            success_file_name))
+
 
 def cal_num_weekend_day_in_range(start_date, end_date):
     delta = (end_date - start_date).days
@@ -91,12 +102,15 @@ def get_download_info(date, file_type):
         link = os.path.join(base_link, str(number), "TC_structure.dat")
         return (link, "TC_structure.tmp", "TC_structure.dat", False)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(dest= "type", help = "File type to download", choices= ['TICKDA', 'TICKDS', 'TCDA', 'TCDS'])
-    parser.add_argument(dest= "date", help = "The date of data to download, this must be in form yyyy-mm-dd, E.g '2021-06-23'")
+    parser.add_argument(dest="type", help="File type to download", choices=[
+                        'TICKDA', 'TICKDS', 'TCDA', 'TCDS'])
+    parser.add_argument(
+        dest="date", help="The date of data to download, this must be in form yyyy-mm-dd, E.g '2021-06-23'")
     args = parser.parse_args()
-    
+
     download_date = args.date
     file_type = args.type
     check_valid_date(download_date)
@@ -106,6 +120,7 @@ if __name__ == "__main__":
     os.chdir(download_date)
 
     logging.info("Start to download file...")
-    link, tmp_file_name, success_file_name, is_zip_file = get_download_info(download_date, file_type)
+    link, tmp_file_name, success_file_name, is_zip_file = get_download_info(
+        download_date, file_type)
 
     download(link, tmp_file_name, success_file_name, is_zip_file)
